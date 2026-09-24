@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using DeliveryApp.Dominio.Compartilhado.Auth;
+using DeliveryApp.Dominio.Modulos.Clientes;
 
 namespace DeliveryApp.Infraestrutura.Orm;
 
@@ -10,11 +11,24 @@ public sealed class DeliveryAppDbContext(
     IProvedorDeUsuario? provedorDeUsuario = null
 ) : IdentityDbContext<IdentityUser<Guid>, IdentityRole<Guid>, Guid>(options)
 {
+    private static readonly Guid TipoUsuarioClienteId = new("01a0d3e1-9b2f-7e4b-a9ae-7e32bcfb5ddb");
+
+    public DbSet<Cliente> Clientes => Set<Cliente>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
 
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(DeliveryAppDbContext).Assembly);
+
+        // CRIANDO CARGO -> CLIENTE no BD
+        // modelBuilder.Entity<IdentityUser<Guid>>().HasData(new IdentityRole<Guid>
+        // {
+        //     Id = TipoUsuarioClienteId,
+        //     Name = TipoUsuario.Cliente.ToString(),
+        //     NormalizedName = TipoUsuario.Cliente.ToString().ToUpperInvariant(),
+        //     ConcurrencyStamp = "01a0d3e5-4432-7547-b0b9-c79a7772a2ce"
+        // });
 
         if (provedorDeUsuario is not null)
         {
