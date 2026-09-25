@@ -22,6 +22,7 @@ public sealed class JwtProvider(IOptions<JwtOptions> jwtOptions)
         DateTime dataCriacao = DateTime.UtcNow;
         DateTime dataExpiracao = dataCriacao.AddMinutes(options.AccessTokenMinutes);
 
+        // CONSTRUÇÃO DO PAYLOAD (CLAIMS(INFOS))
         List<Claim> claims = [
             new(ClaimTypes.NameIdentifier, usuarioId.ToString()),
             new(ClaimTypes.Email, email),
@@ -29,7 +30,7 @@ public sealed class JwtProvider(IOptions<JwtOptions> jwtOptions)
         ];
 
         SymmetricSecurityKey securityKey = new(Encoding.UTF8.GetBytes(options.Key));
-        SigningCredentials credentials = new(securityKey, SecurityAlgorithms.HmacSha256);
+        SigningCredentials credentials = new(securityKey, SecurityAlgorithms.HmacSha256); // QUANDO FOR ASSINAR USE: (CHAVE, ALG)
 
         JwtSecurityToken token = new(
             issuer: options.Issuer,
