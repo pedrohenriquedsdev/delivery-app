@@ -13,7 +13,7 @@ public static class ResultExtensions
         var tipoErro = (TipoErro)result.Errors.First().Metadata[nameof(TipoErro)];
         var mensagemErro = result.Errors.First().Message;
 
-        if (tipoErro.Equals(TipoErro.NaoAutorizado))
+        if (tipoErro.Equals(TipoErro.NaoAutenticado))
         {
             return CriarProblem(
                 controller,
