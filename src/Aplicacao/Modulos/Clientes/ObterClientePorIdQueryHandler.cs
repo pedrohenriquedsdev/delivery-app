@@ -3,23 +3,22 @@ using DeliveryApp.Dominio.Compartilhado.Auth;
 using DeliveryApp.Dominio.Modulos.Clientes;
 using FluentResults;
 
-public record ClienteDto(Guid Id, string Nome, string Cpf, string Email);
-
-public sealed class ObterClientePorIdHandler(
+public sealed record ObterClientePorIdQuery(Guid ClienteId);
+public sealed class ObterClientePorIdQueryHandler(
     IRepositorioCliente repositorioCliente,
     IProvedorDeUsuario provedorDeUsuario
 )
 {
-    public async Task<Result<ClienteDto>> Handle(Guid clienteId)
+    public async Task<Result<ClienteDto>> Handle(ObterClientePorIdQuery query)
     {
-        if (clienteId != provedorDeUsuario.Id)
+        if (query.ClienteId != provedorDeUsuario.Id)
         {
             return Result.Fail<ClienteDto>(
                 new Error("Um cliente pode acessar apenas suas próprias informações.").WithMetadata(nameof(TipoErro), TipoErro.NaoAutorizado)
             );
         }
 
-        var cliente = await repositorioCliente.SelecionarPorIdAsync(clienteId);
+        var cliente = await repositorioCliente.SelecionarPorIdAsync(query.ClienteId);
 
         if (cliente is null)
             return Result.Fail<ClienteDto>(

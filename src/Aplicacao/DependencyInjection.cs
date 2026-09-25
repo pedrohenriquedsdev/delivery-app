@@ -1,3 +1,4 @@
+using DeliveryApp.Aplicacao.Modulos.Clientes;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace DeliveryApp.Aplicacao;
@@ -8,6 +9,7 @@ public static class DependencyInjection
         this IServiceCollection services
     )
     {
-        services.AddScoped<ObterClientePorIdHandler>();
+        services.AddScoped<ObterClientePorIdQueryHandler>();
+        services.AddScoped<CadastrarClienteCommandHandler>();
     }
 }
