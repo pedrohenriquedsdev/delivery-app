@@ -1,8 +1,10 @@
+using DeliveryApp.Aplicacao.Modulos.Clientes;
 using DeliveryApp.Dominio.Compartilhado.Auth;
 using DeliveryApp.Dominio.Modulos.Clientes;
 using DeliveryApp.Infraestrutura.Orm;
 using DeliveryApp.WebApi.Compartilhado;
 using DeliveryApp.WebApi.Compartilhado.Auth;
+using DeliveryApp.WebApi.Compartilhado.Http;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -17,30 +19,44 @@ public sealed class ClientesController(
     UserManager<IdentityUser<Guid>> userManager,
     SignInManager<IdentityUser<Guid>> signInManager,
     RoleManager<IdentityRole<Guid>> roleManager,
-    JwtProvider jwtProvider
+    JwtProvider jwtProvider,
+    ObterClientePorIdQueryHandler obterClientePorIdQueryHandler,
+    CadastrarClienteCommandHandler cadastrarClienteCommandHandler
 ) : ControllerBase
 {
+
+    [Authorize(Roles = nameof(TipoUsuario.Cliente))]
+    [HttpGet("{clienteId:guid}")]
+    public async Task<ActionResult<ClienteResponse>> ObterPorId(
+        Guid clienteId
+    )
+    {
+        var resultado = await obterClientePorIdQueryHandler.Handle(new ObterClientePorIdQuery(clienteId));
+
+        if (resultado.IsFailed)
+            return this.ProblemDetails(resultado);
+
+        var response = new ClienteResponse(
+            resultado.Value.Id,
+            resultado.Value.Nome,
+            resultado.Value.Cpf,
+            resultado.Value.Email
+        );
+
+        return Ok(response);
+    }
+
     [AllowAnonymous]
     [HttpPost("cadastro")]
     public async Task<ActionResult<AutenticacaoClienteResponse>> Cadastrar(
         CadastrarClienteRequest request
     )
     {
-        var cliente = new Cliente(Guid.CreateVersion7(), request.Nome, request.Cpf);
-
-        var erros = cliente.Validar();
-
-        if (erros.Count > 0)
-            return this.ErroDeValidacao(erros);
-
-        if (await dbContext.Clientes.AnyAsync(registro => registro.Cpf == cliente.Cpf))
-        {
-            return this.Conflito("Já existe um cliente cadastrado com este CPF.");
-        }
+        var id = Guid.CreateVersion7();
 
         var usuario = new IdentityUser<Guid>
         {
-            Id = cliente.Id,
+            Id = id,
             Email = request.Email.Trim(),
             UserName = request.Email.Trim()
         };
@@ -76,9 +92,11 @@ public sealed class ClientesController(
                 return this.ErrosDeCriacaoUsuario(resultadoInclusaoPapel);
             }
 
-            dbContext.Clientes.Add(cliente);
-
-            await dbContext.SaveChangesAsync();
+            await cadastrarClienteCommandHandler.Handle(new CadastrarClienteCommand(
+                id,
+                request.Nome,
+                request.Cpf
+            ));
 
             var jwt = jwtProvider.CriarToken(usuario.Id, usuario.Email!, TipoUsuario.Cliente);
 
