@@ -2,14 +2,16 @@ using DeliveryApp.Aplicacao.Compartilhado;
 using DeliveryApp.Dominio.Compartilhado.Auth;
 using DeliveryApp.Dominio.Modulos.Clientes;
 using FluentResults;
+using MediatR;
 
-public sealed record ObterClientePorIdQuery(Guid ClienteId);
+public sealed record ObterClientePorIdQuery(Guid ClienteId) : IRequest<Result<ClienteDto>>;
+
 public sealed class ObterClientePorIdQueryHandler(
     IRepositorioCliente repositorioCliente,
     IProvedorDeUsuario provedorDeUsuario
-)
+) : IRequestHandler<ObterClientePorIdQuery, Result<ClienteDto>>
 {
-    public async Task<Result<ClienteDto>> Handle(ObterClientePorIdQuery query)
+    public async Task<Result<ClienteDto>> Handle(ObterClientePorIdQuery query, CancellationToken cancellationToken = default)
     {
         if (query.ClienteId != provedorDeUsuario.Id)
         {
@@ -18,7 +20,7 @@ public sealed class ObterClientePorIdQueryHandler(
             );
         }
 
-        var cliente = await repositorioCliente.SelecionarPorIdAsync(query.ClienteId);
+        var cliente = await repositorioCliente.SelecionarPorIdAsync(query.ClienteId, cancellationToken);
 
         if (cliente is null)
             return Result.Fail<ClienteDto>(
